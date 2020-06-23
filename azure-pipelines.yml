@@ -1,5 +1,5 @@
 # This file is responsible for seting up several compiler enviorments.
-# Once setup is done, the template "build.yml" is invoked to test freetype
+# Once setup is done, the template "build-cmake.yml" is invoked to test freetype
 # compiles successfully on various operating systems and compilers liststed
 # below. Artifacts of all builds are also published to azure.
 
@@ -16,13 +16,27 @@ jobs:
 
 ## Linux ##
 
-- job: ArchLinux
+- job: ArchLinux_Autotools
+  displayName: "Archlinux Autotools"
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+    - checkout: self
+      path: freetype2
+      
+    - template: arch-setup.yml
+      
+    - template: build-autotools.yml
+
+- job: ArchLinux_Cmake
+  displayName: "Archlinux CMake"
   pool:
     vmImage: ubuntu-latest
   strategy:
     matrix:
       shared:
         BUILD_SHARED_LIBS: true
+        BUILD_ARGS: '-G "Unix Makefiles" -D BUILD_SHARED_LIBS=$(BUILD_SHARED_LIBS)'
       static:
         BUILD_SHARED_LIBS: false
   
@@ -30,37 +44,19 @@ jobs:
     - checkout: self
       path: freetype2
       
-    - bash: |
-        set -e
-        cd $(Build.BinariesDirectory)
-        ARCH_URL=`curl -s https://mirrors.acm.wpi.edu/archlinux/iso/latest/ | egrep -o 'archlinux-bootstrap-([0-9._]+)-x86_64.tar.gz' | head -n1`
-        echo https://mirrors.acm.wpi.edu/archlinux/iso/latest/$ARCH_URL
-        curl https://mirrors.acm.wpi.edu/archlinux/iso/latest/$ARCH_URL -o arch.tar.gz
-        sudo tar xzf arch.tar.gz
-        sudo mount --bind ./root.x86_64/ ./root.x86_64/
-        sudo cp -R $(Agent.BuildDirectory)/freetype2 ./root.x86_64/
-        sudo mkdir -p ./root.x86_64/$(Build.BinariesDirectory)
-        sudo mount --bind $(Build.BinariesDirectory) ./root.x86_64/$(Build.BinariesDirectory) 
-        cat << EOF | sudo ./root.x86_64/bin/arch-chroot ./root.x86_64/
-        set -e
-        echo 'Server = https://mirrors.kernel.org/archlinux/\$repo/os/\$arch' >> /etc/pacman.d/mirrorlist
-        pacman-key --init 
-        pacman-key --populate archlinux
-        pacman -Syu --noconfirm base base-devel git gcc cmake harfbuzz zlib libpng 
-        EOF
-      displayName: 'Bootstrap Archlinux'
+    - template: arch-setup.yml
       
-    - template: build.yml
+    - template: build-cmake.yml
       parameters:
         preCMD: 'cd $(Build.BinariesDirectory) && cat << EOF | sudo ./root.x86_64/bin/arch-chroot ./root.x86_64/'
         srcDIR: freetype2
         postCMD: 'EOF'
-        cmakeArgs: '-G "Unix Makefiles" -D BUILD_SHARED_LIBS=$(BUILD_SHARED_LIBS)'
+        buildArgs: $(BUILD_ARGS)
 
 ## Windows ##
 
-- job: MSVC_2019
-  displayName: "MVSC 2019"
+- job: MSVC_2019_CMake
+  displayName: "MVSC 2019 CMake"
   pool:
     vmImage: windows-latest
   strategy:
@@ -96,11 +92,34 @@ jobs:
         vcpkgGitCommitId: $(vcpkgGitRef)
         vcpkgGitURL: https://github.com/microsoft/vcpkg.git
 
-    - template: build.yml
+    - template: build-cmake.yml
       parameters:
-        cmakeArgs: '-G "Visual Studio 16 2019" -A $(ARCH) -D CMAKE_TOOLCHAIN_FILE=$(Build.BinariesDirectory)\vcpkg\scripts\buildsystems\vcpkg.cmake -D VCPKG_ROOT=$(Build.BinariesDirectory)\vcpkg -D VCPKG_TARGET_TRIPLET=$(TRIPLET) -D BUILD_SHARED_LIBS=$(BUILD_SHARED_LIBS)'
+        buildArgs: '-G "Visual Studio 16 2019" -A $(ARCH) -D CMAKE_TOOLCHAIN_FILE=$(Build.BinariesDirectory)\vcpkg\scripts\buildsystems\vcpkg.cmake -D VCPKG_ROOT=$(Build.BinariesDirectory)\vcpkg -D VCPKG_TARGET_TRIPLET=$(TRIPLET) -D BUILD_SHARED_LIBS=$(BUILD_SHARED_LIBS)'
 
-- job: MINGW
+- job: MINGW_Autotools
+  displayName: "Mingw Autotools"
+  pool:
+    vmImage: windows-latest
+  strategy:
+    matrix:
+      i686:
+        MINGW_UPPER: MINGW32
+        MINGW_LOWER: mingw32
+        MINGW_ARCH: i686
+      x86_64:
+        MINGW_UPPER: MINGW64
+        MINGW_LOWER: mingw64
+        MINGW_ARCH: x86_64
+  
+  steps:
+    - template: mingw-setup.yml
+      
+    - template: build-autotools.yml
+      parameters:
+        mingw: true
+
+- job: MINGW_CMake
+  displayName: "MingGW CMake"
   pool:
     vmImage: windows-latest
   strategy:
@@ -127,42 +146,43 @@ jobs:
         BUILD_SHARED_LIBS: false
   
   steps:
-    - script: |
-        git clone https://github.com/msys2/msys2-ci-base.git %CD:~0,2%\msys64
-        %CD:~0,2%\msys64\usr\bin\rm -rf %CD:~0,2%\msys64\.git
-      displayName: Install MSYS2
-    
-    - script: |
-        set PATH=%CD:~0,2%\msys64\usr\bin;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem
-        %CD:~0,2%\msys64\usr\bin\pacman --noconfirm -Syyuu
-      displayName: Update MSYS2
-    
-    - script: |
-        set PATH=%CD:~0,2%\msys64\usr\bin;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem
-        %CD:~0,2%\msys64\usr\bin\pacman --noconfirm --needed -S git base-devel mingw-w64-$(MINGW_ARCH)-toolchain mingw-w64-$(MINGW_ARCH)-cmake mingw-w64-$(MINGW_ARCH)-harfbuzz
-        %CD:~0,2%\msys64\usr\bin\pacman --noconfirm -Scc
-      displayName: Install Toolchain
+    - template: mingw-setup.yml
       
-    - template: build.yml
+    - template: build-cmake.yml
       parameters:
         mingw: true
-        cmakeArgs: '-G \"MSYS Makefiles\" -D BUILD_SHARED_LIBS=$(BUILD_SHARED_LIBS)'
+        buildArgs: '-G \"MSYS Makefiles\" -D BUILD_SHARED_LIBS=$(BUILD_SHARED_LIBS)'
 
 ## MacOS X ##
 
-- job: MacOS_X
-  displayName: "MacOS X"
+- job: MacOS_X_Autotools
+  displayName: "MacOS X Autotools"
+  pool:
+    vmImage: macos-latest
+    
+  steps:
+    - script: |
+        curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh
+        bash ./install.sh
+        brew install autoconf automake
+      displayName: 'Install Brew'
+      
+    - template: build-autotools.yml
+
+- job: MacOS_X_CMake
+  displayName: "MacOS X CMake"
   pool:
     vmImage: macos-latest
 
   steps:
-    - template: build.yml
+    - template: build-cmake.yml
       parameters:
-        cmakeArgs: '-G Xcode -D BUILD_FRAMEWORK:BOOL=true'
+        buildArgs: '-G Xcode -D BUILD_FRAMEWORK:BOOL=true'
 
 ### iOS ##
 
-- job: iOS
+- job: iOS_CMake
+  displayName: "iOS CMake"
   pool:
     vmImage: macos-latest
   strategy:
@@ -181,6 +201,6 @@ jobs:
         IOS_PLATFORM: SIMULATOR_WATCHOS
       
   steps:
-    - template: build.yml
+    - template: build-cmake.yml
       parameters:
-        cmakeArgs: '-G Xcode -D PLATFORM=$(IOS_PLATFORM)'
+        buildArgs: '-G Xcode -D PLATFORM=$(IOS_PLATFORM)'
