@@ -13,7 +13,7 @@
 
 GIT_HASH=$(git log --pretty=format:'%h' -n 1)
  
-./ft-test-font.sh ${GIT_HASH} /home/greg/Inconsolata-Regular.ttf 16 72 1 1 1 0 963
+${PREVIOUS_PWD}/ft-test-font.sh ${GIT_HASH} /home/greg/Inconsolata-Regular.ttf 16 72 1 1 1 0 963
 if [ ! -z "$1" ]; then
- ./ft-report.sh /home/greg/Inconsolata-Regular.ttf 16 ${1} ${2} &> /tmp/ft-report.html
+ ${PREVIOUS_PWD}/ft-report.sh /home/greg/Inconsolata-Regular.ttf 16 ${1} ${2} &> /tmp/ft-report.html
 fi

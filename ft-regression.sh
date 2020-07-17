@@ -36,6 +36,7 @@ if [ -d "${COMP_COMMIT_DIR}" ]; then
 fi
 
 PREV_GIT_HASH=$(git log --pretty=format:'%h' -n 1)
+export PREVIOUS_PWD=${PWD}
 
 build
 ./ft-test.sh
@@ -43,7 +44,6 @@ build
 echo "Copying ${PWD} to ${COMP_COMMIT_DIR}"
 cp -p -r "${PWD}" "${COMP_COMMIT_DIR}"
 
-PREVIOUS_PWD=${PWD}
 pushd "${COMP_COMMIT_DIR}"
 
 # clean before we checkout
@@ -55,7 +55,7 @@ if [[ "${PWD}" == "${COMP_COMMIT_DIR}" ]]; then
   git checkout "$1"
   GIT_HASH=$(git log --pretty=format:'%h' -n 1)
   build
-  ./ft-test.sh ${PREV_GIT_HASH} ${GIT_HASH}
+  ${PREVIOUS_PWD}/ft-test.sh ${PREV_GIT_HASH} ${GIT_HASH}
   popd
 else
   echo "Failed to change directory to ${COMP_COMMIT_DIR}. Something is horribly wrong..."

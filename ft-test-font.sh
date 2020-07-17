@@ -57,6 +57,7 @@ fi
 for char in $(seq ${START_C} ${END_C})
 do 
    ((i=i%WORKERS)); ((i++==0)) && wait
+   echo "ftgrid ${char}"
    char_padded=$(printf "%03d" ${char})
    xvfbRunAndScreenShot $((98 + ${i})) "ftgrid_${char_padded}.png" $DEMOSDIR/ftgrid -r $DPI -f ${char} ${SIZE} ${FONT} &
 done
