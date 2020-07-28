@@ -19,6 +19,7 @@ jobs:
   displayName: "Archlinux Regression tests"
   pool:
     vmImage: ubuntu-latest
+  timeoutInMinutes: 360
   steps:
     - checkout: self
       path: freetype2
