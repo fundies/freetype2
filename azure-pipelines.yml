@@ -1,5 +1,5 @@
 # This file is responsible for seting up several compiler enviorments.
-# Once setup is done, the template "build-cmake.yml" is invoked to test freetype
+# Once setup is done, the template "CI/build-cmake.yml" is invoked to test freetype
 # compiles successfully on various operating systems and compilers liststed
 # below. Artifacts of all builds are also published to azure.
 
@@ -15,7 +15,22 @@ variables:
 jobs:
 
 ## Linux ##
-
+- job: ArchLinux_Regression
+  displayName: "Archlinux Regression tests"
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+    - checkout: self
+      path: freetype2
+      
+    - template: CI/arch-setup.yml
+      
+    - template: CI/regression-test.yml
+      parameters:
+        preCMD: 'cd $(Build.BinariesDirectory) && cat << EOF | sudo ./root.x86_64/bin/arch-chroot ./root.x86_64/'
+        srcDIR: freetype2
+        postCMD: 'EOF'
+        
 - job: ArchLinux_Autotools
   displayName: "Archlinux Autotools"
   pool:
@@ -24,9 +39,9 @@ jobs:
     - checkout: self
       path: freetype2
       
-    - template: arch-setup.yml
+    - template: CI/arch-setup.yml
       
-    - template: build-autotools.yml
+    - template: CI/build-autotools.yml
 
 - job: ArchLinux_Cmake
   displayName: "Archlinux CMake"
@@ -44,9 +59,9 @@ jobs:
     - checkout: self
       path: freetype2
       
-    - template: arch-setup.yml
+    - template: CI/arch-setup.yml
       
-    - template: build-cmake.yml
+    - template: CI/build-cmake.yml
       parameters:
         preCMD: 'cd $(Build.BinariesDirectory) && cat << EOF | sudo ./root.x86_64/bin/arch-chroot ./root.x86_64/'
         srcDIR: freetype2
@@ -92,7 +107,7 @@ jobs:
         vcpkgGitCommitId: $(vcpkgGitRef)
         vcpkgGitURL: https://github.com/microsoft/vcpkg.git
 
-    - template: build-cmake.yml
+    - template: CI/build-cmake.yml
       parameters:
         buildArgs: '-G "Visual Studio 16 2019" -A $(ARCH) -D CMAKE_TOOLCHAIN_FILE=$(Build.BinariesDirectory)\vcpkg\scripts\buildsystems\vcpkg.cmake -D VCPKG_ROOT=$(Build.BinariesDirectory)\vcpkg -D VCPKG_TARGET_TRIPLET=$(TRIPLET) -D BUILD_SHARED_LIBS=$(BUILD_SHARED_LIBS)'
 
@@ -112,9 +127,9 @@ jobs:
         MINGW_ARCH: x86_64
   
   steps:
-    - template: mingw-setup.yml
+    - template: CI/mingw-setup.yml
       
-    - template: build-autotools.yml
+    - template: CI/build-autotools.yml
       parameters:
         mingw: true
 
@@ -146,9 +161,9 @@ jobs:
         BUILD_SHARED_LIBS: false
   
   steps:
-    - template: mingw-setup.yml
+    - template: CI/mingw-setup.yml
       
-    - template: build-cmake.yml
+    - template: CI/build-cmake.yml
       parameters:
         mingw: true
         buildArgs: '-G \"MSYS Makefiles\" -D BUILD_SHARED_LIBS=$(BUILD_SHARED_LIBS)'
@@ -167,7 +182,7 @@ jobs:
         brew install autoconf automake
       displayName: 'Install Brew'
       
-    - template: build-autotools.yml
+    - template: CI/build-autotools.yml
 
 - job: MacOS_X_CMake
   displayName: "MacOS X CMake"
@@ -175,7 +190,7 @@ jobs:
     vmImage: macos-latest
 
   steps:
-    - template: build-cmake.yml
+    - template: CI/build-cmake.yml
       parameters:
         buildArgs: '-G Xcode -D BUILD_FRAMEWORK:BOOL=true'
 
@@ -201,6 +216,6 @@ jobs:
         IOS_PLATFORM: SIMULATOR_WATCHOS
       
   steps:
-    - template: build-cmake.yml
+    - template: CI/build-cmake.yml
       parameters:
         buildArgs: '-G Xcode -D PLATFORM=$(IOS_PLATFORM)'

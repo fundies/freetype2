@@ -9,12 +9,13 @@ steps:
       sudo mount --bind ./root.x86_64/ ./root.x86_64/
       sudo cp -R $(Agent.BuildDirectory)/freetype2 ./root.x86_64/
       sudo mkdir -p ./root.x86_64/$(Build.BinariesDirectory)
-      sudo mount --bind $(Build.BinariesDirectory) ./root.x86_64/$(Build.BinariesDirectory) 
+      sudo mount --bind $(Build.BinariesDirectory) ./root.x86_64/$(Build.BinariesDirectory)
       cat << EOF | sudo ./root.x86_64/bin/arch-chroot ./root.x86_64/
       set -e
       echo 'Server = https://mirrors.kernel.org/archlinux/\$repo/os/\$arch' >> /etc/pacman.d/mirrorlist
       pacman-key --init 
       pacman-key --populate archlinux
-      pacman -Syu --noconfirm base base-devel git gcc cmake harfbuzz zlib libpng 
+      pacman -Syu --noconfirm base base-devel git gcc cmake harfbuzz zlib libpng xorg-server-xvfb imagemagick npm xorg-xwd
+      npm install -g pretty-diff
       EOF
     displayName: 'Bootstrap Archlinux'
