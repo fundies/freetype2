@@ -51,7 +51,7 @@ mkdir -p $OUTDIR
 
 # Because witing 1 second for every command can be slow we set up multiple xvfbs
 # in order to expedite the proccess.
-WORKERS=10
+WORKERS=100
 for worker in $(seq 1 $WORKERS)
 do
   startX $((98 + ${worker})) &
@@ -88,5 +88,5 @@ do
 done
 
 sleep 2 # wait for workers to finish up
-killall Xvfb
+#killall Xvfb
 sleep 2 # wait for all xvfb to die
