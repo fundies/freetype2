@@ -51,7 +51,7 @@ mkdir -p $OUTDIR
 
 # Because witing 1 second for every command can be slow we set up multiple xvfbs
 # in order to expedite the proccess.
-WORKERS=100
+WORKERS=50
 for worker in $(seq 1 $WORKERS)
 do
   startX $((98 + ${worker})) &
