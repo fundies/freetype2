@@ -171,7 +171,7 @@ echo "
 </html>"
 
 # Move our tests results into dir so html refrences work
-ln -s ${TEST_OUTDIR}/${COMMIT_A}/ ${TEST_OUTDIR}/${COMMIT_A}_${COMMIT_B}_diffs &> /dev/null
-ln -s ${TEST_OUTDIR}/${COMMIT_B}/ ${TEST_OUTDIR}/${COMMIT_A}_${COMMIT_B}_diffs &> /dev/null
+cp -R ${TEST_OUTDIR}/${COMMIT_A}/ ${TEST_OUTDIR}/${COMMIT_A}_${COMMIT_B}_diffs &> /dev/null
+cp -R ${TEST_OUTDIR}/${COMMIT_B}/ ${TEST_OUTDIR}/${COMMIT_A}_${COMMIT_B}_diffs &> /dev/null
 
 exit $EXIT
