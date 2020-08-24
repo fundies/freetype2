@@ -19,6 +19,15 @@ jobs:
   displayName: "Archlinux Regression tests"
   pool:
     vmImage: ubuntu-latest
+  strategy:
+    matrix:
+      Test1:
+        TEST=0
+      Test2:
+        TEST=1
+      Test3:
+        TEST=2
+        
   timeoutInMinutes: 360
   steps:
     - checkout: self
@@ -31,6 +40,7 @@ jobs:
         preCMD: 'cd $(Build.BinariesDirectory) && cat << EOF | sudo ./root.x86_64/bin/arch-chroot ./root.x86_64/'
         srcDIR: freetype2
         postCMD: 'EOF'
+        testNum: $(TEST)
         
 - job: ArchLinux_Autotools
   displayName: "Archlinux Autotools"

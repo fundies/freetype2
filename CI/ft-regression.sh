@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# Usage: ./CI/ft-regression.sh <commit to test against>
+# Include our configuration
+. ./CI/ft-tests.config
+
+# Usage: ./CI/ft-regression.sh <commit to test against> <test to run (a number or "all")>
 
 # The following script checks the source code in the current folder for
 # regressions or changes against previous commits. This is the main script you 
@@ -21,8 +24,9 @@ function build() {
   make
   pushd ..
   [[ -d ./freetype2-demos ]]\
-  || git clone git://git.sv.nongnu.org/freetype/freetype2-demos.git
+  || git clone ${DEMOS_URL}
   pushd freetype2-demos
+  git checkout `git rev-list -n 1 --first-parent --before="$(git show -s --format=%ci $1)" master`
   make
   popd
   popd
@@ -37,13 +41,16 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-# This is where we build the commit of freetype we wish to compare against. We
-# export it here because this variable is used in other scripts invoked later.
-export COMP_COMMIT_DIR="/tmp/freetype2"
+if [ -z "$2" ]; then
+  echo "No tests specified running all tests"
+  export RUN_TEST="all"
+else
+  export RUN_TEST="$2"
+fi
 
 # We want a fresh checkout and work dir in order to prevent any stale changes 
 # from slipping through.
-rm -rf "${COMP_COMMIT_DIR}" "/tmp/ft-test/"
+rm -rf "${COMP_COMMIT_DIR}" "${TEST_OUTDIR}"
 
 # Here we store the current directories shortened commit hash which is used as 
 # the subdirectory name for where to dump the logs and images.
@@ -54,7 +61,7 @@ export PREVIOUS_PWD=${PWD}
 
 # This is the first build/run of the current dir that will dump our "A" 
 # metricts.
-build
+build ${PREV_GIT_HASH}
 ./CI/ft-test.sh
 
 # Next we set up our "B" directory by copyiing our current sources.
@@ -73,7 +80,7 @@ if [[ "${PWD}" == "${COMP_COMMIT_DIR}" ]]; then
   git checkout "$1"
   GIT_HASH=$(git log --pretty=format:'%h' -n 1)
   # Here we start the build / metrics for build "B" 
-  build
+  build ${GIT_HASH}
   # We call the scripts from the current directory as they may not exist in 
   # previous commits and to prevent confusion when modifying them. One set of
   # scripts is called but on each call they call different versions of the demos

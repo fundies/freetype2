@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Include our configuration
+. ${PREVIOUS_PWD}/CI/ft-tests.config
+
 # Arguments
 FONT=$1
 SIZE=$2
@@ -12,11 +15,14 @@ COMMIT_B=$4
 EXIT=0
 
 metrics_dir="$(basename ${FONT})/${SIZE}/"
-diff_dir="/tmp/ft-tests/${COMMIT_A}_${COMMIT_B}_diffs/${metrics_dir}"
+diff_dir="${TEST_OUTDIR}/${COMMIT_A}_${COMMIT_B}_diffs/${metrics_dir}"
 mkdir -p "${diff_dir}"
 
-OUTDIR_A="/tmp/ft-tests/${COMMIT_A}/$(basename ${FONT})/${SIZE}/"
-OUTDIR_B="/tmp/ft-tests/${COMMIT_B}/$(basename ${FONT})/${SIZE}/"
+OUTDIR_A="${TEST_OUTDIR}/${COMMIT_A}/$(basename ${FONT})/${SIZE}/"
+OUTDIR_B="${TEST_OUTDIR}/${COMMIT_B}/$(basename ${FONT})/${SIZE}/"
+
+RELATIVE_OUTDIR_A="${COMMIT_A}/$(basename ${FONT})/${SIZE}/"
+RELATIVE_OUTDIR_B="${COMMIT_B}/$(basename ${FONT})/${SIZE}/"
 
 # Function below generates a page to compare images. The image should change 
 # between the two versions on mouse over to easily spot differences.
@@ -28,11 +34,17 @@ function write_img_comp() {
   .comp {
     width: $(identify -format '%w' $1)px;
     height: $(identify -format '%h' $1)px;
-    background: url(\"$1\") no-repeat;
+    background: url(\"${RELATIVE_OUTDIR_A}/$(basename $1)\") no-repeat;
     display: inline-block;
   }
   .comp:hover {
-    background: url(\"${OUTDIR_B}/$(basename $1)\") no-repeat;
+    background: url(\"${RELATIVE_OUTDIR_B}/$(basename $1)\") no-repeat;
+  }
+  .diff {
+    width: $(identify -format '%w' $1)px;
+    height: $(identify -format '%h' $1)px;
+    background: url(\"${diff_dir}/$(basename $1 .png)_diff.png\") no-repeat;
+    display: inline-block;
   }
   </style>
   </head>
@@ -41,6 +53,7 @@ function write_img_comp() {
   Comparison of $(basename $1) between commits ${COMMIT_A} and ${COMMIT_B}
   </h2>
   <div class=\"comp\"></div>
+  <div class=\"diff\"></div>
   </body>
   </html>"
 }
@@ -96,7 +109,7 @@ do
   # If is png compare with imagick
   if [[ "$extension" == "png" ]];
   then
-    diif_cmd=$(compare -metric AE $f ${OUTDIR_B}/$(basename $f)\
+    diif_cmd=$(compare -metric AE -highlight-color Red -lowlight-color PaleGreen $f ${OUTDIR_B}/$(basename $f)\
      "${diff_dir}/$(basename $f .png)_diff.png" &> /dev/null)
     result=$?
   # Else if txt compare with
@@ -107,17 +120,17 @@ do
   fi  
     
   # Generate approriate diff page
-  PAGE="$(basename $f .$extension).html"
+  PAGE="$(basename $f .$extension)_${COMMIT_A}_${COMMIT_B}_diff.html"
   if [ "$result" -eq "0" ]; 
   then
     PASS+="$f "
   else
     if [[ "$extension" == "png" ]];
     then
-      write_img_comp $f &> "${diff_dir}/$PAGE"
+      write_img_comp $f &> "${TEST_OUTDIR}/${COMMIT_A}_${COMMIT_B}_diffs/$PAGE"
     else
       DISPLAY=-1 pretty-diff $f ${OUTDIR_B}/$(basename $f)
-      mv /tmp/diff.html "${diff_dir}/$PAGE"
+      mv /tmp/diff.html "${TEST_OUTDIR}/${COMMIT_A}_${COMMIT_B}_diffs/$PAGE"
     fi
     FAIL+="$f "
   fi
@@ -137,7 +150,7 @@ do
   PAGE="$(basename $f .$extension).html"
   echo "
   <tr>
-    <td><a href=\"${COMMIT_A}_${COMMIT_B}_diffs/${metrics_dir}/$PAGE\">$(basename $f)</a></td>
+    <td><a href=\"${COMMIT_A}_${COMMIT_B}_diffs/$(basename $f .$extension)_${COMMIT_A}_${COMMIT_B}_diff.html\">$(basename $f)</a></td>
   </tr>"
 done
 
@@ -147,7 +160,7 @@ for f in $PASS
 do
   echo "
   <tr>
-    <td><a href=\"${COMMIT_A}/${metrics_dir}/$(basename $f)\">$(basename $f)</a></td>
+    <td><a href=\"${COMMIT_A}_${COMMIT_B}_diffs/${COMMIT_A}/${metrics_dir}/$(basename $f)\">$(basename $f)</a></td>
   </tr>"
 done
 
@@ -156,5 +169,9 @@ echo "
 
 </body>
 </html>"
+
+# Move our tests results into dir so html refrences work
+ln -s ${TEST_OUTDIR}/${COMMIT_A}/ ${TEST_OUTDIR}/${COMMIT_A}_${COMMIT_B}_diffs &> /dev/null
+ln -s ${TEST_OUTDIR}/${COMMIT_B}/ ${TEST_OUTDIR}/${COMMIT_A}_${COMMIT_B}_diffs &> /dev/null
 
 exit $EXIT
