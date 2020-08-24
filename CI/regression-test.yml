@@ -22,7 +22,7 @@ steps:
       cd freetype2-demos
       ln -s ${{ parameters.srcDIR }} ../freetype2
       cd /freetype2
-      ./CI/ft-regression.sh master
+      ./CI/ft-regression.sh master ${{ parameters.testNum }}
       chmod -R 755 /tmp/ft-tests/
       mv /tmp/ft-tests/ /
       ${{ parameters.postCMD }}

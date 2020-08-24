@@ -69,12 +69,12 @@ steps:
     displayName: 'Build Demos'
 
 
-- script: |
-    zip -r $(Build.ArtifactStagingDirectory)/freetype-build.zip $(Build.BinariesDirectory)/install
-  displayName: 'Stage Artifacts'
+  - script: |
+      zip -r $(Build.ArtifactStagingDirectory)/freetype-build.zip $(Build.BinariesDirectory)/install
+    displayName: 'Stage Artifacts'
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Push Build Artifacts'
-  inputs:
-    pathtoPublish: $(Build.ArtifactStagingDirectory)
-    artifactName: $(Agent.JobName)
+  - task: PublishBuildArtifacts@1
+    displayName: 'Push Build Artifacts'
+    inputs:
+      pathtoPublish: $(Build.ArtifactStagingDirectory)
+      artifactName: $(Agent.JobName)
