@@ -27,6 +27,7 @@ steps:
   - script: |
       set PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem
       %CD:~0,2%\msys64\usr\bin\bash -lc "make && make install DESTDIR=$(echo \"$(Build.BinariesDirectory)/install\" | tr '\\' '/')"
+      %CD:~0,2%\msys64\usr\bin\bash -lc "cp -R ${{ parameters.srcDIR }} $(echo \"$(Build.BinariesDirectory)/freetype2\" | tr '\\' '/')"
     displayName: 'Build and Package'
     env:
       MSYSTEM: $(MINGW_UPPER)
@@ -35,7 +36,7 @@ steps:
 
   - script: |
       set PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem
-      %CD:~0,2%\msys64\usr\bin\bash -lc "git clone git://git.sv.nongnu.org/freetype/freetype2-demos.git && cd freetype2-demos && cp -R ${{ parameters.srcDIR }} ../freetype2 && make && mv bin/ $(echo \"$(Build.BinariesDirectory)/install/demos\" | tr '\\' '/')"
+      %CD:~0,2%\msys64\usr\bin\bash -lc "cd $(echo \"$(Build.BinariesDirectory)\" | tr '\\' '/') && git clone git://git.sv.nongnu.org/freetype/freetype2-demos.git && cd freetype2-demos && make && mv bin/ $(echo \"$(Build.BinariesDirectory)/install/demos\" | tr '\\' '/')"
     displayName: 'Build Demos'
     env:
       MSYSTEM: $(MINGW_UPPER)
