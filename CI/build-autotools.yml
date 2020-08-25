@@ -26,7 +26,7 @@ steps:
       
   - script: |
       set PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem
-      %CD:~0,2%\msys64\usr\bin\bash -lc "make && make install DESTDIR=$(echo \"$(Build.BinariesDirectory)/install\" | tr '\\' '/') && zip freetype-build.zip $(Build.BinariesDirectory)"
+      %CD:~0,2%\msys64\usr\bin\bash -lc "make && make install DESTDIR=$(echo \"$(Build.BinariesDirectory)/install\" | tr '\\' '/')"
     displayName: 'Build and Package'
     env:
       MSYSTEM: $(MINGW_UPPER)
@@ -41,6 +41,11 @@ steps:
       MSYSTEM: $(MINGW_UPPER)
       CHERE_INVOKING: yes
       MINGW_INSTALLS: $(MINGW_LOWER)
+  
+  - script: |
+      set PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem"
+      %CD:~0,2%\msys64\usr\bin\bash -lc "zip -r $(echo \"$(Build.ArtifactStagingDirectory)/freetype-build.zip\" | tr '\\' '/') $(echo \"$(Build.BinariesDirectory)/install\" | tr '\\' '/')"
+    displayName: 'Stage Artifacts'
 
 - ${{ if eq(parameters.mingw, false) }}:
   - script: |
@@ -68,13 +73,12 @@ steps:
       mv bin/ $(Build.BinariesDirectory)/install/demos
     displayName: 'Build Demos'
 
-
   - script: |
       zip -r $(Build.ArtifactStagingDirectory)/freetype-build.zip $(Build.BinariesDirectory)/install
     displayName: 'Stage Artifacts'
 
-  - task: PublishBuildArtifacts@1
-    displayName: 'Push Build Artifacts'
-    inputs:
-      pathtoPublish: $(Build.ArtifactStagingDirectory)
-      artifactName: $(Agent.JobName)
+- task: PublishBuildArtifacts@1
+  displayName: 'Push Build Artifacts'
+  inputs:
+    pathtoPublish: $(Build.ArtifactStagingDirectory)
+    artifactName: $(Agent.JobName)
