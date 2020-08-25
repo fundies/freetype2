@@ -35,7 +35,7 @@ steps:
 
   - script: |
       set PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem
-      %CD:~0,2%\msys64\usr\bin\bash -lc "git clone git://git.sv.nongnu.org/freetype/freetype2-demos.git && cd freetype2-demos && ln -s ${{ parameters.srcDIR }} ../freetype2 && make && mv bin/ $(Build.BinariesDirectory)/install/demos"
+      %CD:~0,2%\msys64\usr\bin\bash -lc "git clone git://git.sv.nongnu.org/freetype/freetype2-demos.git && cd freetype2-demos && cp -R ${{ parameters.srcDIR }} ../freetype2 && make && mv bin/ $(Build.BinariesDirectory)/install/demos"
     displayName: 'Build Demos'
     env:
       MSYSTEM: $(MINGW_UPPER)
