@@ -34,14 +34,15 @@ steps:
       CHERE_INVOKING: yes
       MINGW_INSTALLS: $(MINGW_LOWER)
 
-  - script: |
-      set PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem
-      %CD:~0,2%\msys64\usr\bin\bash -lc "cd $(echo \"$(Build.BinariesDirectory)\" | tr '\\' '/') && git clone git://git.sv.nongnu.org/freetype/freetype2-demos.git && cd freetype2-demos && make && mv bin/ $(echo \"$(Build.BinariesDirectory)/install/demos\" | tr '\\' '/')"
-    displayName: 'Build Demos'
-    env:
-      MSYSTEM: $(MINGW_UPPER)
-      CHERE_INVOKING: yes
-      MINGW_INSTALLS: $(MINGW_LOWER)
+  # Building Demos in mingw seems broken do to configuration error of it including termios.h in ttdebug.c which doesn't exist in mingw
+  #- script: |
+  #    set PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem
+  #    %CD:~0,2%\msys64\usr\bin\bash -lc "cd $(echo \"$(Build.BinariesDirectory)\" | tr '\\' '/') && git clone git://git.sv.nongnu.org/freetype/freetype2-demos.git && cd freetype2-demos && make && mv bin/ $(echo \"$(Build.BinariesDirectory)/install/demos\" | tr '\\' '/')"
+  #  displayName: 'Build Demos'
+  #  env:
+  #    MSYSTEM: $(MINGW_UPPER)
+  #    CHERE_INVOKING: yes
+  #    MINGW_INSTALLS: $(MINGW_LOWER)
   
   - script: |
       set PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem"
